@@ -1,81 +1,91 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Manajemen Data: Formulir dan Tabel</title>
+    <title>Desa di Lampung webgis</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <!-- Make sure you put this AFTER Leaflet's CSS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/0.4.2/leaflet.draw.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/0.4.2/leaflet.draw.js"></script>
+    <!-- Custom styles for this template-->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-search@2.3.7/dist/leaflet-search.src.css" />
+    <script src="https://unpkg.com/leaflet-search@2.3.7/dist/leaflet-search.src.js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
+        *{
             margin: 0;
             padding: 0;
-            min-height: 100vh;
         }
-
-        header {
-            background-color: #4CAF50;
-            color: white;
-            text-align: center;
-            padding: 1em;
+        #map {
+            height: 94vh;
+            width: 100%;
         }
-
-        nav {
-            background-color: #f2f2f2;
-            padding: 1em;
-            text-align: center;
-        }
-
-        nav a {
-            margin: 0 15px;
-            text-decoration: none;
-            color: #333;
-        }
-
-        nav a:hover {
-            color: #4CAF50;
-        }
-
-        .description {
-            padding: 2em;
-            text-align: center;
-        }
-
-
-
     </style>
 </head>
-
 <body>
-    <header>
-        <img src="logo.jpg" alt="" srcset="" style="max-width: 100px;
-        height: auto;
-        display: block;
-        margin: 0 auto;">
-        <h1>Sistem Manajemen Data: Formulir dan Tabel</h1>
-    </header>
-
-    <nav>
-        <a href="./index.html">Home</a>
-        <a href="./3.html">Formulir</a>
-        <a href="./2.html">Tabel</a>
-    </nav>
-
-    <div class="description">
-        <h2>Selamat datang di Sistem Manajemen Data kami!</h2>
-        <p>Kami menyediakan solusi efisien untuk mengelola data Anda. Dengan fitur formulir, Anda dapat dengan mudah memasukkan data baru ke dalam sistem kami. Selain itu, kami menyajikan data-data tersebut dalam bentuk tabel yang rapi dan mudah dipahami. Temukan kemudahan dalam mengelola data Anda dengan layanan kami.</p>
+    <div>
+        <h1 style="text-align: center;">Webgis Desa di Lampung</h1>
     </div>
+    <div id="map"></div>
 
-    <footer style="background-color: #333; 
-    color: #fff; 
-    padding: 10px;
-    text-align: center;
-    position: absolute;
-      bottom: 0;
-      width: 100vw;">
-        <p>&copy; Hak Cipta 2023 - Nama Website</p>
-      </footer>
-      
+    <!-- Bootstrap core JavaScript-->
+    <script src="js/jquery/jquery.min.js"></script>
+
+    <!-- Core plugin JavaScript-->
+    <script src="js/jquery-easing/jquery.easing.min.js"></script>
+    <script src="js/batasdesalampung.js"></script>
+    <script>
+        var map = L.map("map").setView([-5.08165636373117, 105.22497706571964], 9);
+        L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            maxZoom: 19,
+            attribution:
+                '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        }).addTo(map);
+        var desa = L.geoJSON(batasdesalampung, {
+            onEachFeature: function (feature, layer) {
+                layer.bindPopup(`
+                Desa : ${feature.properties.DESA}<br>
+                Kecamatan : ${feature.properties.KECAMATAN}<br>
+                Kabupaten : ${feature.properties.KAB_KOTA}<br>
+                Jumlah Penduduk : ${feature.properties.JUMLAH_PEN}<br>
+                Luas Desa : ${feature.properties.LUAS_DESA}m2<br>
+                `);
+                layer.feature.properties.SEARCHITEM = `${feature.properties.DESA}, ${feature.properties.KECAMATAN}, ${feature.properties.KAB_KOTA}`;
+            }
+        }).addTo(map);
+
+        var searchControl = new L.Control.Search({
+            layer: desa,
+            propertyName: 'SEARCHITEM',
+
+            marker: false,
+            moveToLocation: function (latlng, title, map) {
+                //map.fitBounds( latlng.layer.getBounds() );
+                var zoom = map.getBoundsZoom(latlng.layer.getBounds());
+                map.setView(latlng, zoom); // access the zoom
+            }
+        });
+
+        searchControl.on('search:locationfound', function (e) {
+
+            //console.log('search:locationfound', );
+
+            //map.removeLayer(this._markerSearch)
+
+            e.layer.setStyle({ fillColor: '#3f0', color: '#0f0' });
+            if (e.layer._popup)
+                e.layer.openPopup();
+
+        }).on('search:collapsed', function (e) {
+            desa.eachLayer(function (layer) {
+                layer.closePopup();	//restore feature color
+                desa.resetStyle(layer);
+            });
+        });
+        map.addControl(searchControl);
+    </script>
 </body>
-
 </html>
